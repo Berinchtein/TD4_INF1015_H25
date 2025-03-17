@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="td3.cpp">
+    <ClCompile Include="td4.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="bibliotheque_cours\bibliotheque_cours.cpp">
