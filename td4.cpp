@@ -305,6 +305,8 @@ int main()
 
 	ListeFilms listeFilms = creerListe("films.bin");
 
+	listeFilms.trouverActeur("Benedict Cumberbatch")->anneeNaissance = 1976;
+
 	vector<Item*> bibliotheque;
 	for (int i : range(listeFilms.size())) {
 		bibliotheque.push_back(listeFilms[i]);
