@@ -8,9 +8,10 @@
 #include <functional>
 #include <cassert>
 #include <span>
+#include <iostream>
 using namespace std;
 
-struct Film; struct Acteur; // Permet d'utiliser les types alors qu'ils seront défini après.
+class Film; class Livre; struct Acteur; // Permet d'utiliser les types alors qu'ils seront défini après.
 
 class ListeFilms {
 public:
@@ -75,14 +76,47 @@ private:
 
 using ListeActeurs = Liste<Acteur>;
 
-struct Film
+class Item
 {
-	string titre, realisateur; // Titre et nom du réalisateur (on suppose qu'il n'y a qu'un réalisateur).
-	int anneeSortie=0, recette=0; // Année de sortie et recette globale du film en millions de dollars
-	ListeActeurs acteurs;
+protected:
+	Item(const string& titre, int anneeSortie) :
+		titre_(titre), anneeSortie_(anneeSortie) {
+	}
+	friend ostream& operator<< (ostream& os, const Item& item);
+
+private:
+	string titre_;
+	int anneeSortie_ = 0;
+};
+
+class Film : public Item
+{
+public:
+	Film(const string& titre, const string& realisateur, int anneeSortie, int recette, int nActeurs) :
+		Item(titre, anneeSortie), realisateur_(realisateur), recette_(recette), acteurs_(ListeActeurs(nActeurs))
+	{
+		cout << "Création Film " << titre << endl;
+	}
+	friend ostream& operator<< (ostream& os, const Film& film);
+	ListeActeurs& getActeurs() { return acteurs_; }
+	const ListeActeurs& getActeurs() const { return acteurs_; }
+
+private:
+	string realisateur_;
+	int recette_ = 0;
+	ListeActeurs acteurs_;
+};
+
+class Livre : public Item
+{
+public:
+
+private:
+	string auteur_;
+	int copiesVendues_ = 0, nPages_ = 0;
 };
 
 struct Acteur
 {
-	string nom; int anneeNaissance=0; char sexe='\0';
+	string nom; int anneeNaissance = 0; char sexe = '\0';
 };

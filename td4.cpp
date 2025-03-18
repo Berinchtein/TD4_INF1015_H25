@@ -100,7 +100,7 @@ void ListeFilms::enleverFilm(const Film* film)
 shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const
 {
 	for (const Film* film : enSpan()) {
-		for (const shared_ptr<Acteur>& acteur : film->acteurs.enSpan()) {
+		for (const shared_ptr<Acteur>& acteur : film->getActeurs().enSpan()) {
 			if (acteur->nom == nomActeur)
 				return acteur;
 		}
@@ -129,17 +129,15 @@ shared_ptr<Acteur> lireActeur(istream& fichier, const ListeFilms& listeFilms)
 
 Film* lireFilm(istream& fichier, ListeFilms& listeFilms)
 {
-	Film* film = new Film;
-	film->titre       = lireString(fichier);
-	film->realisateur = lireString(fichier);
-	film->anneeSortie = lireUint16 (fichier);
-	film->recette     = lireUint16 (fichier);
-	auto nActeurs = lireUint8 (fichier);
-	film->acteurs = ListeActeurs(nActeurs);  // On n'a pas fait de méthode pour changer la taille d'allocation, seulement un constructeur qui prend la capacité.  Pour que cette affectation fonctionne, il faut s'assurer qu'on a un operator= de move pour ListeActeurs.
-	cout << "Création Film " << film->titre << endl;
-
+	auto titre = lireString(fichier);
+	auto realisateur = lireString(fichier);
+	auto anneeSortie = lireUint16(fichier);
+	auto recette = lireUint16(fichier);
+	auto nActeurs = lireUint8(fichier);
+	Film* film = new Film(titre, realisateur, anneeSortie, recette, nActeurs);
+	
 	for ([[maybe_unused]] auto i : range(nActeurs)) {  // On peut aussi mettre nElements avant et faire un span, comme on le faisait au TD précédent.
-		film->acteurs.ajouter(lireActeur(fichier, listeFilms));
+		film->getActeurs().ajouter(lireActeur(fichier, listeFilms));
 	}
 
 	return film;
@@ -178,16 +176,23 @@ ostream& operator<< (ostream& os, const Acteur& acteur)
 	return os << "  " << acteur.nom << ", " << acteur.anneeNaissance << " " << acteur.sexe << endl;
 }
 
+ostream& operator<< (ostream& (os), const Item& item)
+{
+	os << "Titre: " << item.titre_ << endl;
+	os << "Année : " << item.anneeSortie_;
+	return os;
+}
+
 // Fonction pour afficher un film avec tous ces acteurs (en utilisant la fonction afficherActeur ci-dessus).
 //[
-ostream& operator<< (ostream& os, const Film& film)
+ostream& operator<< (ostream& (os), const Film& film)
 {
-	os << "Titre: " << film.titre << endl;
-	os << "  Réalisateur: " << film.realisateur << "  Année :" << film.anneeSortie << endl;
-	os << "  Recette: " << film.recette << "M$" << endl;
+	os << static_cast<Item>(film) << endl;
+	os << "Réalisateur: " << film.realisateur_ << endl;
+	os << "Recette: " << film.recette_ << "M$" << endl;
 
 	os << "Acteurs:" << endl;
-	for (const shared_ptr<Acteur>& acteur : film.acteurs.enSpan())
+	for (const shared_ptr<Acteur>& acteur : film.acteurs_.enSpan())
 		os << *acteur;
 	return os;
 }
@@ -215,7 +220,15 @@ int main()
 	static const string ligneDeSeparation = "\n\033[35m════════════════════════════════════════\033[0m\n";
 
 	ListeFilms listeFilms = creerListe("films.bin");
+
+	vector<Item> bibliotheque;
+
+	for (int i : range(listeFilms.size())) {
+		cout << *listeFilms[i] << endl;
+		//bibliotheque.push_back(listeFilms[i])
+	}
 	
+	/*
 	cout << ligneDeSeparation << "Le premier film de la liste est:" << endl;
 	// Le premier film de la liste.  Devrait être Alien.
 	cout << *listeFilms[0];
@@ -288,7 +301,9 @@ int main()
 	// Pour une couverture avec 0% de lignes non exécutées:
 	listeFilms.enleverFilm(nullptr); // Enlever un film qui n'est pas dans la liste (clairement que nullptr n'y est pas).
 	assert(listeFilms.size() == 6);
+	*/
 
 	// Détruire tout avant de terminer le programme.
 	listeFilms.detruire(true);
+	
 }
