@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <sstream>
 #include <span>
+#include <vector>
 #include "cppitertools/range.hpp"
 #include "debogage_memoire.hpp"        // Ajout des numéros de ligne des "new" dans le rapport de fuites.  Doit être après les include du système, qui peuvent utiliser des "placement new" (non supporté par notre ajout de numéros de lignes).
 using namespace std;
@@ -225,7 +226,7 @@ int main()
 
 	for (int i : range(listeFilms.size())) {
 		cout << *listeFilms[i] << endl;
-		//bibliotheque.push_back(listeFilms[i])
+		bibliotheque.push_back(*listeFilms[i]);
 	}
 	
 	/*
