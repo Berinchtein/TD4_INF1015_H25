@@ -1,5 +1,7 @@
-﻿// Solutionnaire du TD3 INF1015 hiver 2025
-// Par Francois-R.Boyer@PolyMtl.ca
+﻿/*
+ * Nom: Fichier Source TD4
+ * Auteurs: Manuel Jarry et Meryem El Kamouni
+ */
 
 #pragma region "Includes"//{
 #define _CRT_SECURE_NO_WARNINGS // On permet d'utiliser les fonctions de copies de chaînes qui sont considérées non sécuritaires.

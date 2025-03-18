@@ -1,7 +1,9 @@
-﻿// Solutionnaire du TD3 INF1015 hiver 2025
-// Par Francois-R.Boyer@PolyMtl.ca
+﻿/*
+ * Nom: Structures Header TD4
+ * Description: Structures mémoires pour une collection de films et de livres.
+ * Auteurs: Manuel Jarry et Meryem El Kamouni
+ */
 #pragma once
-// Structures mémoires pour une collection de films.
 
 #include <string>
 #include <memory>
