@@ -11,7 +11,7 @@
 #include <iostream>
 using namespace std;
 
-class Film; class Livre; struct Acteur; // Permet d'utiliser les types alors qu'ils seront défini après.
+class Item; class Film; class Livre; class FilmLivre; struct Acteur; // Permet d'utiliser les types alors qu'ils seront défini après.
 
 class ListeFilms {
 public:
@@ -76,30 +76,71 @@ private:
 
 using ListeActeurs = Liste<Acteur>;
 
-class Item
+class Affichable
 {
-protected:
-	Item(const string& titre, int anneeSortie) :
-		titre_(titre), anneeSortie_(anneeSortie) {
+public:
+	virtual ostream& afficher(ostream& os) const = 0;
+	virtual ~Affichable() = default;
+};
+
+class Item : public Affichable
+{
+public:
+	virtual ~Item() = default;
+	bool titreContient(const string& texte) {
+		if (titre_.contains(texte)) {
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
+	ostream& afficher(ostream& os) const override;
 	friend ostream& operator<< (ostream& os, const Item& item);
+
+protected:
+	Item() = default;
+	Item(const string& titre, int anneeSortie) :
+		titre_(titre), anneeSortie_(anneeSortie)
+	{
+	}
+	Item(const Item& item) :
+		titre_(item.titre_), anneeSortie_(item.anneeSortie_)
+	{
+	}
 
 private:
 	string titre_;
 	int anneeSortie_ = 0;
 };
 
-class Film : public Item
+class Film : virtual public Item
 {
 public:
+	Film() = default;
 	Film(const string& titre, const string& realisateur, int anneeSortie, int recette, int nActeurs) :
 		Item(titre, anneeSortie), realisateur_(realisateur), recette_(recette), acteurs_(ListeActeurs(nActeurs))
 	{
 		cout << "Création Film " << titre << endl;
 	}
+	Film(const Film& film) :
+		Item(film), realisateur_(film.realisateur_), recette_(film.recette_), acteurs_(ListeActeurs(film.acteurs_))
+	{
+	}
+	Film& operator= (const Film& film) {
+		if (this != &film) {
+			Item::operator=(film);
+			realisateur_ = film.realisateur_;
+			recette_ = film.recette_;
+			acteurs_ = ListeActeurs(film.acteurs_);
+		}
+		return *this;
+	}
+	~Film() = default;
+	friend shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const;
+	friend Film* lireFilm(istream& fichier, ListeFilms& listeFilms);
+	ostream& afficher(ostream& os) const override;
 	friend ostream& operator<< (ostream& os, const Film& film);
-	ListeActeurs& getActeurs() { return acteurs_; }
-	const ListeActeurs& getActeurs() const { return acteurs_; }
 
 private:
 	string realisateur_;
@@ -107,13 +148,37 @@ private:
 	ListeActeurs acteurs_;
 };
 
-class Livre : public Item
+class Livre : virtual public Item
 {
 public:
+	Livre() = default;
+	Livre(const string& titre, int anneeSortie, const string& auteur, int copiesVendues, int nPages) :
+		Item(titre, anneeSortie), auteur_(auteur), copiesVendues_(copiesVendues), nPages_(nPages)
+	{
+		cout << "Création Livre " << titre << endl;
+	}
+	Livre(const Livre& livre) :
+	auteur_(livre.auteur_), copiesVendues_(livre.copiesVendues_), nPages_(livre.nPages_)
+	{
+	}
+	~Livre() = default;
+	ostream& afficher(ostream& os) const override;
+	ostream& afficherSansAttributsItem(ostream& os) const;
+	friend ostream& operator<< (ostream& os, const Livre& livre);
 
 private:
 	string auteur_;
 	int copiesVendues_ = 0, nPages_ = 0;
+};
+
+class FilmLivre : public Film, public Livre
+{
+public:
+	FilmLivre(const Film& film, const Livre& livre) :
+		Item(film), Film(film), Livre(livre) {
+	}
+	ostream& afficher(ostream& os) const override;
+	friend ostream& operator<< (ostream& os, const FilmLivre& filmLivre);
 };
 
 struct Acteur

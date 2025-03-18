@@ -59,6 +59,7 @@
     <ClInclude Include="bibliotheque_cours.hpp" />
     <ClInclude Include="debogage_memoire.hpp" />
     <ClInclude Include="structures.hpp" />
+    <ClInclude Include="td4.h" />
     <ClInclude Include="verification_allocation.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -10,6 +10,7 @@
 #include "verification_allocation.hpp" // Nos fonctions pour le rapport de fuites de mémoire.
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <limits>
@@ -55,15 +56,15 @@ string lireString(istream& fichier)
 //[
 void ListeFilms::changeDimension(int nouvelleCapacite)
 {
-	Film** nouvelleListe = new Film*[nouvelleCapacite];
-	
+	Film** nouvelleListe = new Film * [nouvelleCapacite];
+
 	if (elements != nullptr) {  // Noter que ce test n'est pas nécessaire puique nElements sera zéro si elements est nul, donc la boucle ne tentera pas de faire de copie, et on a le droit de faire delete sur un pointeur nul (ça ne fait rien).
 		nElements = min(nouvelleCapacite, nElements);
 		for (int i : range(nElements))
 			nouvelleListe[i] = elements[i];
 		delete[] elements;
 	}
-	
+
 	elements = nouvelleListe;
 	capacite = nouvelleCapacite;
 }
@@ -101,7 +102,7 @@ void ListeFilms::enleverFilm(const Film* film)
 shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const
 {
 	for (const Film* film : enSpan()) {
-		for (const shared_ptr<Acteur>& acteur : film->getActeurs().enSpan()) {
+		for (const shared_ptr<Acteur>& acteur : film->acteurs_.enSpan()) {
 			if (acteur->nom == nomActeur)
 				return acteur;
 		}
@@ -115,9 +116,9 @@ shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const
 shared_ptr<Acteur> lireActeur(istream& fichier, const ListeFilms& listeFilms)
 {
 	Acteur acteur = {};
-	acteur.nom            = lireString(fichier);
-	acteur.anneeNaissance = lireUint16 (fichier);
-	acteur.sexe           = lireUint8  (fichier);
+	acteur.nom = lireString(fichier);
+	acteur.anneeNaissance = lireUint16(fichier);
+	acteur.sexe = lireUint8(fichier);
 
 	shared_ptr<Acteur> acteurExistant = listeFilms.trouverActeur(acteur.nom);
 	if (acteurExistant != nullptr)
@@ -136,9 +137,9 @@ Film* lireFilm(istream& fichier, ListeFilms& listeFilms)
 	auto recette = lireUint16(fichier);
 	auto nActeurs = lireUint8(fichier);
 	Film* film = new Film(titre, realisateur, anneeSortie, recette, nActeurs);
-	
+
 	for ([[maybe_unused]] auto i : range(nActeurs)) {  // On peut aussi mettre nElements avant et faire un span, comme on le faisait au TD précédent.
-		film->getActeurs().ajouter(lireActeur(fichier, listeFilms));
+		film->acteurs_.ajouter(lireActeur(fichier, listeFilms));
 	}
 
 	return film;
@@ -148,14 +149,14 @@ ListeFilms creerListe(string nomFichier)
 {
 	ifstream fichier(nomFichier, ios::binary);
 	fichier.exceptions(ios::failbit);
-	
+
 	int nElements = lireUint16(fichier);
 
 	ListeFilms listeFilms;
 	for ([[maybe_unused]] int i : range(nElements)) { //NOTE: On ne peut pas faire un span simple avec ListeFilms::enSpan car la liste est vide et on ajoute des éléments à mesure.
 		listeFilms.ajouterFilm(lireFilm(fichier, listeFilms));
 	}
-	
+
 	return listeFilms;
 }
 
@@ -171,35 +172,55 @@ void ListeFilms::detruire(bool possedeLesFilms)
 }
 //]
 
-// Pour que l'affichage de Film fonctionne avec <<, il faut aussi modifier l'affichage de l'acteur pour avoir un ostream; l'énoncé ne demande pas que ce soit un opérateur, mais tant qu'à y être...
+void afficherBibliotheque(vector<Item*> bibliotheque)
+{
+	for (auto&& item : bibliotheque) {
+		if (auto film = dynamic_cast<Film*>(item)) {
+			cout << *film << endl;
+		}
+		else if (auto livre = dynamic_cast<Livre*>(item)) {
+			cout << *livre << endl;
+		}
+	}
+}
+
+void detruireLivresBibliotheque(vector<Item*> bibliotheque)
+{
+	for (auto&& item : bibliotheque) {
+		if (auto livre = dynamic_cast<Livre*>(item)) {
+			if (livre != nullptr) {
+				delete livre;
+			}
+		}
+	}
+}
+
+ostream& operator<< (ostream& os, const Item& item)
+{
+	return item.afficher(os);
+}
+
+ostream& operator<< (ostream& os, const Film& film)
+{
+	return film.afficher(os);
+}
+
+ostream& operator<< (ostream& os, const Livre& livre)
+{
+	return livre.afficher(os);
+}
+
+ostream& operator<< (ostream& os, const FilmLivre& filmLivre)
+{
+	return filmLivre.afficher(os);
+}
+
 ostream& operator<< (ostream& os, const Acteur& acteur)
 {
-	return os << "  " << acteur.nom << ", " << acteur.anneeNaissance << " " << acteur.sexe << endl;
-}
-
-ostream& operator<< (ostream& (os), const Item& item)
-{
-	os << "Titre: " << item.titre_ << endl;
-	os << "Année : " << item.anneeSortie_;
+	os << "  " << acteur.nom << ", " << acteur.anneeNaissance << " " << acteur.sexe << endl;
 	return os;
 }
 
-// Fonction pour afficher un film avec tous ces acteurs (en utilisant la fonction afficherActeur ci-dessus).
-//[
-ostream& operator<< (ostream& (os), const Film& film)
-{
-	os << static_cast<Item>(film) << endl;
-	os << "Réalisateur: " << film.realisateur_ << endl;
-	os << "Recette: " << film.recette_ << "M$" << endl;
-
-	os << "Acteurs:" << endl;
-	for (const shared_ptr<Acteur>& acteur : film.acteurs_.enSpan())
-		os << *acteur;
-	return os;
-}
-//]
-
-// Pas demandé dans l'énoncé de tout mettre les affichages avec surcharge, mais pourquoi pas.
 ostream& operator<< (ostream& os, const ListeFilms& listeFilms)
 {
 	static const string ligneDeSeparation = //[
@@ -211,100 +232,106 @@ ostream& operator<< (ostream& os, const ListeFilms& listeFilms)
 	return os;
 }
 
+ostream& Item::afficher(ostream& os) const
+{
+	os << "Titre: " << titre_ << endl;
+	os << "Année : " << anneeSortie_ << endl;
+	return os;
+}
+
+ostream& Film::afficher(ostream& os) const
+{
+	Item::afficher(os);
+	os << "Réalisateur: " << realisateur_ << endl;
+	os << "Recette: " << recette_ << "M$" << endl;
+
+	os << "Acteurs:" << endl;
+	for (const shared_ptr<Acteur>& acteur : acteurs_.enSpan())
+		os << *acteur;
+	return os;
+}
+
+
+ostream& Livre::afficher(ostream& os) const
+{
+	Item::afficher(os);
+	os << "Auteur: " << auteur_ << endl;
+	os << "Copies vendues: " << copiesVendues_ << "M" << endl;
+	os << "Nombre de pages: " << nPages_ << endl;
+	return os;
+}
+
+ostream& Livre::afficherSansAttributsItem(ostream& os) const
+{
+	os << "Auteur: " << auteur_ << endl;
+	os << "Copies vendues: " << copiesVendues_ << "M" << endl;
+	os << "Nombre de pages: " << nPages_ << endl;
+	return os;
+}
+
+ostream& FilmLivre::afficher(ostream& os) const
+{
+	Film::afficher(os);
+	Livre::afficherSansAttributsItem(os);
+	return os;
+}
+
 int main()
 {
-	#ifdef VERIFICATION_ALLOCATION_INCLUS
+#ifdef VERIFICATION_ALLOCATION_INCLUS
 	bibliotheque_cours::VerifierFuitesAllocations verifierFuitesAllocations;
-	#endif
+#endif
 	bibliotheque_cours::activerCouleursAnsi();  // Permet sous Windows les "ANSI escape code" pour changer de couleurs https://en.wikipedia.org/wiki/ANSI_escape_code ; les consoles Linux/Mac les supportent normalement par défaut.
 
 	static const string ligneDeSeparation = "\n\033[35m════════════════════════════════════════\033[0m\n";
 
 	ListeFilms listeFilms = creerListe("films.bin");
 
-	vector<Item> bibliotheque;
+	vector<Item*> bibliotheque;
 
 	for (int i : range(listeFilms.size())) {
-		cout << *listeFilms[i] << endl;
-		bibliotheque.push_back(*listeFilms[i]);
+		bibliotheque.push_back(listeFilms[i]);
 	}
-	
-	/*
-	cout << ligneDeSeparation << "Le premier film de la liste est:" << endl;
-	// Le premier film de la liste.  Devrait être Alien.
-	cout << *listeFilms[0];
 
-	// Tests chapitre 7:
-	ostringstream tamponStringStream;
-	tamponStringStream << *listeFilms[0];
-	string filmEnString = tamponStringStream.str();
-	assert(filmEnString == 
-		"Titre: Alien\n"
-		"  Réalisateur: Ridley Scott  Année :1979\n"
-		"  Recette: 203M$\n"
-		"Acteurs:\n"
-		"  Tom Skerritt, 1933 M\n"
-		"  Sigourney Weaver, 1949 F\n"
-		"  John Hurt, 1940 M\n"
-	);
+	ifstream fichierLivres("livres.txt");
 
-	cout << ligneDeSeparation << "Les films sont:" << endl;
-	// Affiche la liste des films.  Il devrait y en avoir 7.
-	cout << listeFilms;
+	if (fichierLivres.is_open()) {
+		string titre;
+		int anneeSortie;
+		string auteur;
+		int copiesVendues;
+		int nPages;
 
-	listeFilms.trouverActeur("Benedict Cumberbatch")->anneeNaissance = 1976;
+		while (fichierLivres >> quoted(titre) >> anneeSortie >> quoted(auteur) >> copiesVendues >> nPages) {
+			Livre* livre = new Livre(titre, anneeSortie, auteur, copiesVendues, nPages);
+			bibliotheque.push_back(livre);
+		}
 
-	// Tests chapitres 7-8:
-	// Les opérations suivantes fonctionnent.
-	Film skylien = *listeFilms[0];
-	skylien.titre = "Skylien";
-	skylien.acteurs[0] = listeFilms[1]->acteurs[0];
-	skylien.acteurs[0]->nom = "Daniel Wroughton Craig";
-	cout << ligneDeSeparation
-		<< "Les films copiés/modifiés, sont:\n"
-		<< skylien << *listeFilms[0] << *listeFilms[1] << ligneDeSeparation;
-	assert(skylien.acteurs[0]->nom == listeFilms[1]->acteurs[0]->nom);
-	assert(skylien.acteurs[0]->nom != listeFilms[0]->acteurs[0]->nom);
+		fichierLivres.close();
+	}
 
-	// Tests chapitre 10:
-	auto film955 = listeFilms.trouver([](const auto& f) { return f.recette == 955; });
-	cout << "\nFilm de 955M$:\n" << *film955;
-	assert(film955->titre == "Le Hobbit : La Bataille des Cinq Armées");
-	assert(listeFilms.trouver([](const auto&) { return false; }) == nullptr); // Pour la couveture de code: chercher avec un critère toujours faux ne devrait pas trouver.
-	// Exemple de condition plus compliquée: (pas demandé)
-	auto estVoyelle = [](char c) { static const string voyelles = "AEUOUYaeiouy"; return voyelles.find(c) != voyelles.npos; };
-	auto commenceParVoyelle = [&](const string& x) { return !x.empty() && estVoyelle(x[0]); };
-	assert(listeFilms.trouver([&](const auto& f) { return commenceParVoyelle(f.titre); }) == listeFilms[0]);
-	assert(listeFilms.trouver([&](const auto& f) { return f.acteurs[0]->nom[0] != 'T'; }) == listeFilms[1]);
-	assert(listeFilms.trouver([&](const auto& f) { return commenceParVoyelle(f.titre) && f.acteurs[0]->nom[0] != 'T'; }) == listeFilms[2]);
+	cout << ligneDeSeparation << "Affichage du contenu de la bibliothèque avant le combo:\n" << endl;
+	afficherBibliotheque(bibliotheque);
 
-	// Tests chapitre 9:
-	Liste<string> listeTextes(2);
-	listeTextes.ajouter(make_shared<string>("Bonjour"));
-	listeTextes.ajouter(make_shared<string>("Allo"));
-	Liste<string> listeTextes2 = listeTextes;
-	listeTextes2[0] = make_shared<string>("Hi");
-	*listeTextes2[1] = "Allo!";
-	assert(*listeTextes[0] == "Bonjour");
-	assert(*listeTextes[1] == *listeTextes2[1]);
-	assert(*listeTextes2[0] == "Hi");
-	assert(*listeTextes2[1] == "Allo!");
-	listeTextes = move(listeTextes2);  // Pas demandé, mais comme j'ai fait la méthode on va la tester; noter que la couverture de code dans VisualStudio ne montre pas la couverture des constructeurs/opérateurs= =default.
-	assert(*listeTextes[0] == "Hi" && *listeTextes[1] == "Allo!");
+	Film filmFilmLivre = Film();
+	Livre livreFilmLivre = Livre();
+	for (auto&& item : bibliotheque) {
+		if ((*item).titreContient("Hobbit")) {
+			if (auto film = dynamic_cast<Film*>(item)) {
+				filmFilmLivre = *film;
+			}
+			else if (auto livre = dynamic_cast<Livre*>(item)) {
+				livreFilmLivre = *livre;
+			}
+		}
+	}
 
-	// Détruit et enlève le premier film de la liste (Alien).
-	delete listeFilms[0];
-	listeFilms.enleverFilm(listeFilms[0]);
+	FilmLivre* filmLivre = new FilmLivre(filmFilmLivre, livreFilmLivre);
+	bibliotheque.push_back(filmLivre);
 
-	cout << ligneDeSeparation << "Les films sont maintenant:" << endl;
-	cout << listeFilms;
+	cout << ligneDeSeparation << "Affichage du contenu de la bibliothèque après le combo:\n" << endl;
+	afficherBibliotheque(bibliotheque);
 
-	// Pour une couverture avec 0% de lignes non exécutées:
-	listeFilms.enleverFilm(nullptr); // Enlever un film qui n'est pas dans la liste (clairement que nullptr n'y est pas).
-	assert(listeFilms.size() == 6);
-	*/
-
-	// Détruire tout avant de terminer le programme.
+	detruireLivresBibliotheque(bibliotheque);
 	listeFilms.detruire(true);
-	
 }
