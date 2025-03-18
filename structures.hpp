@@ -86,17 +86,7 @@ public:
 class Item : public Affichable
 {
 public:
-	virtual ~Item() = default;
-	bool titreContient(const string& texte) {
-		if (titre_.contains(texte)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-	ostream& afficher(ostream& os) const override;
-	friend ostream& operator<< (ostream& os, const Item& item);
+	bool titreContient(const string& texte);
 
 protected:
 	Item() = default;
@@ -108,6 +98,9 @@ protected:
 		titre_(item.titre_), anneeSortie_(item.anneeSortie_)
 	{
 	}
+	virtual ~Item() = default;
+	ostream& afficher(ostream& os) const override;
+	friend ostream& operator<< (ostream& os, const Item& item);
 
 private:
 	string titre_;
@@ -127,20 +120,12 @@ public:
 		Item(film), realisateur_(film.realisateur_), recette_(film.recette_), acteurs_(ListeActeurs(film.acteurs_))
 	{
 	}
-	Film& operator= (const Film& film) {
-		if (this != &film) {
-			Item::operator=(film);
-			realisateur_ = film.realisateur_;
-			recette_ = film.recette_;
-			acteurs_ = ListeActeurs(film.acteurs_);
-		}
-		return *this;
-	}
 	~Film() = default;
-	friend shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const;
-	friend Film* lireFilm(istream& fichier, ListeFilms& listeFilms);
+	Film& operator= (const Film& film);
 	ostream& afficher(ostream& os) const override;
 	friend ostream& operator<< (ostream& os, const Film& film);
+	friend shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const;
+	friend Film* lireFilm(istream& fichier, ListeFilms& listeFilms);
 
 private:
 	string realisateur_;

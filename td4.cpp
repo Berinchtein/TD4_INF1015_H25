@@ -195,6 +195,25 @@ void detruireLivresBibliotheque(vector<Item*> bibliotheque)
 	}
 }
 
+bool Item::titreContient(const string& texte) {
+	if (titre_.contains(texte)) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+Film& Film::operator= (const Film& film) {
+	if (this != &film) {
+		Item::operator=(film);
+		realisateur_ = film.realisateur_;
+		recette_ = film.recette_;
+		acteurs_ = ListeActeurs(film.acteurs_);
+	}
+	return *this;
+}
+
 ostream& operator<< (ostream& os, const Item& item)
 {
 	return item.afficher(os);
@@ -217,8 +236,7 @@ ostream& operator<< (ostream& os, const FilmLivre& filmLivre)
 
 ostream& operator<< (ostream& os, const Acteur& acteur)
 {
-	os << "  " << acteur.nom << ", " << acteur.anneeNaissance << " " << acteur.sexe << endl;
-	return os;
+	return os << "  " << acteur.nom << ", " << acteur.anneeNaissance << " " << acteur.sexe << endl;
 }
 
 ostream& operator<< (ostream& os, const ListeFilms& listeFilms)
@@ -288,7 +306,6 @@ int main()
 	ListeFilms listeFilms = creerListe("films.bin");
 
 	vector<Item*> bibliotheque;
-
 	for (int i : range(listeFilms.size())) {
 		bibliotheque.push_back(listeFilms[i]);
 	}
